@@ -21,6 +21,7 @@ function downloadPackages(count, callback) {
   let currentOffset = 0
 
   scrapper.fetchDependenciesAtOffest(currentOffset).then((deps) => {
+
     for(let i=0; i < deps.length; i++) {
       let dep = deps[i]
 
