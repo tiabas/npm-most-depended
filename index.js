@@ -1,78 +1,83 @@
 'use strict'
 
-const Promise = require("bluebird");
+const BPromise = require("bluebird");
 const urljoin = require('url-join');
 const http = require('http');
 const path = require('path');
-const fs = Promise.promisifyAll(require('fs'));
+const fs = BPromise.promisifyAll(require('fs'));
+const rimraf = require('rimraf');
 
 const utils = require("./lib/utils");
 const NPMScrapper = require("./lib/scrapper");
-const TMP_PATH = `${path.dirname(__filename)}/tmp`
+const TEMP_PATH = `${path.dirname(__filename)}/temp`
 const PACKAGES_PATH = `${path.dirname(__filename)}/packages`
 
+// Get package details from Registry
+// Download Package
+// Extract to final destination
+function processPackage(pkg) {
+  return pkg.getRegistryDetails()
+    .then((packageInfoJSON) => {
+      let distInfo = utils.extractPackageDistInfo(packageInfoJSON),
+      distShasum = distInfo['shasum'],
+      distTarball = distInfo['tarball'];
+
+      // download Tarball based in DistInfo
+      return utils.downloadPackageTarball(distTarball, distShasum, TEMP_PATH);
+    })
+    .then((downloadPath) => {
+      // extract tarball to packages directory
+      let extractionPath = `${TEMP_PATH}/${pkg.name}`;
+      return utils.extractTarball(downloadPath, extractionPath)
+    })
+    .then((extractionPath) => {
+        let packageFinalDest = `${PACKAGES_PATH}/${pkg.name}`
+        return new Promise((resolve, reject) => {
+          fs.rename(`${extractionPath}/package`, packageFinalDest, (err) => {
+            if (err) {
+              reject(err);
+            }
+            else {
+              // packages sucessfully downloaded and extracted
+              console.log(`${pkg.name} extracted to ${extractionPath}`);
+              resolve(packageFinalDest);
+            }
+        });
+        });
+    });
+}
 
 // Takes a count and download
 module.exports = downloadPackages
 function downloadPackages(count, callback) {
-  let packagesDownloaded = 0
-  let packagesExtracted = 0
   let scrapper = new NPMScrapper()
-  let currentOffset = 0
+  , packagesProcessed = 0
+  , currentOffset = 0
+  , pendingJobs = [];
 
-  scrapper.fetchDependenciesAtOffest(currentOffset).then((deps) => {
+  scrapper.fetchDependenciesAtOffest(currentOffset)
+  .then((deps) => {
 
-    for(let i=0; i < deps.length; i++) {
-      let dep = deps[i]
-
-      if (packagesDownloaded >= count) {
-        break;
-      }
-
-      // Get package details from Registry
-      dep.getRegistryDetails()
-      .then((packageInfoJSON) => {
-        let distInfo = utils.extractPackageDistInfo(packageInfoJSON),
-        distShasum = distInfo['shasum'],
-        distTarball = distInfo['tarball'];
-
-        // Download Tarball based in DistInfo
-        return utils.downloadPackageTarball(distTarball, distShasum, TMP_PATH);
-      })
-      .then((downloadPath) => {
-        // Extract tarball to packages directory
-        let extractionPath = `${TMP_PATH}/${dep.name}`;
-        return utils.extractTarball(downloadPath, extractionPath)
-          .then((extractionPath) => {
-            console.log(`${dep.name} successfully extracted to ${extractionPath}`);
-
-            return new Promise(function(resolve, reject) {
-              let packageDir = `${PACKAGES_PATH}/${dep.name}`
-              fs.rename(`${extractionPath}/package`, packageDir, function (err) {
-                if (err) reject(err);
-                else resolve(packageDir);
-              });
-            });
-          });
-      })
-      .then((packageDir) => {
-        // Package succefully downloaded and extracted. Update our status
-        packagesExtracted += 1;
-        if (packagesExtracted >= count) {
-          console.log(`${packagesExtracted} packages downloaded and extracted`);
-          // We're done, return to caller
-          callback();
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-
-      packagesDownloaded += 1
+    for(let i = 0; i < (deps.length - 1) && i < count; i++) {
+      pendingJobs.push(processPackage(deps[i]));
     }
+    // increment offset in case we need to retrive new page
     currentOffset += deps.length;
+    return Promise.all(pendingJobs);
+  })
+  .then((dirs) => {
+    // clean up temp
+    console.log(dirs);
+    return new Promise((resolve, reject) => {
+      rimraf(`${TEMP_PATH}/*`, () => {
+        resolve();
+      });
+    });
+  })
+  .then(() => {
+     callback();
   })
   .catch((err) => {
-      console.log(err);
-  });
+    console.log(err);
+  })
 }
