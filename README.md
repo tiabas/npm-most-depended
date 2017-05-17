@@ -1,5 +1,3 @@
-
-
 ## Directory Structure
 ```
 ├── index.js
@@ -29,20 +27,21 @@
 ```
 
 ## To run
-Ensure that the directory `temp` exists or is created in the project's folder.
-
+*IMPORTANT* Ensure that the directory `temp` exists or is created in the project's folder.
+It will be used to temporarily store downloaded tars before extracting them to their final
+destination.
 ```
 > mkdir temp
 ```
 
 And then run the test
 ```
-npm run test
+> npm run test
 ```
 
 To run the unit tests. Use the command below
 ```
-npm run spec
+> npm run spec
 ```
 
 ## Issues Encountered
