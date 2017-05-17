@@ -36,7 +36,7 @@ function downloadPackages(count, callback) {
         distTarball = distInfo['tarball'];
 
         // Download Tarball based in DistInfo
-        return util.downloadPackageTarball(distTarball, distShasum, TMP_PATH);
+        return utils.downloadPackageTarball(distTarball, distShasum, TMP_PATH);
       })
       .then((downloadPath) => {
         // Extract tarball to packages directory
