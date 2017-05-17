@@ -30,6 +30,8 @@
 *IMPORTANT* Ensure that the directory `temp` exists or is created in the project's folder.
 It will be used to temporarily store downloaded tars before extracting them to their final
 destination.
+The purpose of the temp directory is to ensure that corrupt files or partial downloads do not
+pollute the packages directory.
 ```
 > mkdir temp
 ```
