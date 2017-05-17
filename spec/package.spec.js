@@ -1,7 +1,6 @@
 const fs = require('fs')
 const expect = require('chai').expect
 const sinon = require('sinon')
-
 const NPMPackage = require('../lib/package')
 
 
@@ -30,5 +29,6 @@ describe('NPMPackage', () => {
 
   describe('#getRegistryDetails()', () => {
       // Not Implemented
+      // Trouble Figuring out how to stub promises
   });
 });

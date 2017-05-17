@@ -4,7 +4,6 @@ const expect = require('chai').expect
 const NPMScrapper = require('../lib/scrapper')
 const NPMPackage = require("../package");
 
-
 describe('NPMPackage', () => {
   describe('#extractPackageElements()', () => {
     it('should return a list of package objects', function() {
@@ -50,7 +49,8 @@ describe('NPMPackage', () => {
 
   describe('#fetchDependenciesAtOffest()', () => {
     it('should make url request and return packages', function() {
-  
+      // Not Implemented
+      // Trouble Figuring out how to stub promises
     });
   });
 });
